@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>WebGIS Fasilitas Umum</title>
+
+<!-- MAPBOX -->
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+
+<!-- DIRECTIONS -->
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css" rel="stylesheet">
+
+<style>
+body { margin:0; font-family:Arial; }
+
+/* ===== LANDING ===== */
+#home{
+    height:100vh;
+    background:linear-gradient(
+        rgba(0,0,0,0.6),
+        rgba(0,0,0,0.6)
+    ), url('assets/image/pekalongan.png');
+    background-size:cover;
+    background-position:center;
+
+    color:white;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+
+#home h1{ font-size:50px; }
+#home p{ font-size:18px; margin:15px 0; }
+
+#home button{
+    padding:12px 25px;
+    background:#2563eb;
+    border:none;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* ===== MAP PAGE ===== */
+#mapPage{ display:none; }
+
+/* NAVBAR */
+.navbar{
+    position:fixed;
+    top:0;
+    width:100%;
+    height:50px;
+    background:#0b1f3a;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 40px;
+    z-index:10;
+}
+
+.nav-title{ font-weight:bold; }
+
+.nav-menu{
+    display:flex;
+    gap:10px;
+    margin-right:30px;
+}
+
+.nav-menu button{
+    padding:6px 12px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+.nav-menu button:nth-child(1){
+    background:#ef4444;
+    color:white;
+}
+
+.nav-menu button:nth-child(2){
+    background:#16a34a;
+    color:white;
+}
+
+/* MAP */
+#map{
+    position:absolute;
+    top:50px;
+    bottom:50px;
+    width:100%;
+}
+
+/* LAYER */
+.layer-control{
+    position:absolute;
+    bottom:70px;
+    left:10px;
+    background:white;
+    padding:10px;
+    border-radius:6px;
+    z-index:5;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* FOOTER */
+footer{
+    position:absolute;
+    bottom:0;
+    width:100%;
+    height:50px;
+    background:#0b1f3a;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== LANDING ===== -->
+<div id="home">
+    <h1>WEBGIS FASILITAS UMUM</h1>
+    <p>Lokasi Fasilitas Umum Kabupaten Pekalongan</p>
+    <button onclick="showMap()">Selengkapnya</button>
+</div>
+
+<!-- ===== MAP ===== -->
+<div id="mapPage">
+
+<div class="navbar">
+    <div class="nav-title">Fasilitas Umum Kabupaten Pekalongan</div>
+    <div class="nav-menu">
+        <button onclick="showHome()">Beranda</button>
+        <button onclick="flyToCenter()">Pusat</button>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<div class="layer-control">
+    <b>Layer</b><br>
+    <input type="checkbox" id="hotel" checked> Hotel<br>
+    <input type="checkbox" id="rs" checked> Rumah Sakit<br>
+    <input type="checkbox" id="sekolah" checked> Sekolah<br>
+    <input type="checkbox" id="bangunan" checked> Bangunan Umum<br>
+</div>
+
+<footer>
+    Copyright © Firda Auliya Rahma_117230060
+</footer>
+
+</div>
+
+<script>
+// NAVIGASI
+function showMap(){
+    document.getElementById('home').style.display = 'none';
+    document.getElementById('mapPage').style.display = 'block';
+    setTimeout(() => map.resize(), 300);
+}
+
+function showHome(){
+    document.getElementById('mapPage').style.display = 'none';
+    document.getElementById('home').style.display = 'flex';
+}
+
+function flyToCenter(){
+    map.flyTo({
+        center: [109.6707928824189, -6.88931886389078],
+        zoom: 16,
+        duration: 2000
+    });
+}
+
+// TOKEN
+mapboxgl.accessToken = 'pk.eyJ1IjoiZmlyZGFhdWxpeWFyYWhtYSIsImEiOiJjbW5wdnI2eWQwMHZ4MzBwc2E5aGNkbm1oIn0.jLkgH9Y1ywcPyrg19wPi9w';
+
+// MAP
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v11',
+    center: [109.6707928824189, -6.88931886389078],
+    zoom: 14
+});
+
+map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+const directions = new MapboxDirections({
+    accessToken: mapboxgl.accessToken,
+    unit: 'metric',
+    profile: 'mapbox/driving',
+    language: 'id'
+});
+map.addControl(directions, 'top-right');
+
+// LOAD DATA
+map.on('load', () => {
+
+    map.addSource('hotel',{type:'geojson',data:'assets/geojson/Hotel.geojson'});
+    map.addSource('rs',{type:'geojson',data:'assets/geojson/Rumah_Sakit.geojson'});
+    map.addSource('sekolah',{type:'geojson',data:'assets/geojson/Sekolah.geojson'});
+    map.addSource('bangunan',{type:'geojson',data:'assets/geojson/Bangunan umum lainnya.geojson'});
+
+    // BANGUNAN (ORANYE)
+    map.addLayer({
+        id:'bangunan-layer',
+        type:'fill',
+        source:'bangunan',
+        paint:{ 'fill-color':'#f4a261','fill-opacity':0.4 }
+    });
+
+    map.addLayer({
+        id:'bangunan-outline',
+        type:'line',
+        source:'bangunan',
+        paint:{ 'line-color':'#000','line-width':1 }
+    });
+
+    // SEKOLAH (BIRU)
+    map.addLayer({
+        id:'sekolah-layer',
+        type:'fill',
+        source:'sekolah',
+        paint:{ 'fill-color':'#007bff','fill-opacity':0.5 }
+    });
+
+    map.addLayer({
+        id:'sekolah-outline',
+        type:'line',
+        source:'sekolah',
+        paint:{ 'line-color':'#000','line-width':1 }
+    });
+
+    // RS (PINK)
+    map.addLayer({
+        id:'rs-layer',
+        type:'fill',
+        source:'rs',
+        paint:{ 'fill-color':'#ff4da6','fill-opacity':0.5 }
+    });
+
+    map.addLayer({
+        id:'rs-outline',
+        type:'line',
+        source:'rs',
+        paint:{ 'line-color':'#000','line-width':1 }
+    });
+
+    // HOTEL (HIJAU)
+    map.addLayer({
+        id:'hotel-layer',
+        type:'fill',
+        source:'hotel',
+        paint:{ 'fill-color':'#2ecc71','fill-opacity':0.5 }
+    });
+
+    map.addLayer({
+        id:'hotel-outline',
+        type:'line',
+        source:'hotel',
+        paint:{ 'line-color':'#000','line-width':1 }
+    });
+
+    // TOGGLE
+    function toggleMulti(id, layers){
+        document.getElementById(id).addEventListener('change', function(){
+            const vis = this.checked ? 'visible' : 'none';
+            layers.forEach(l => {
+                map.setLayoutProperty(l, 'visibility', vis);
+            });
+        });
+    }
+
+    toggleMulti('hotel',['hotel-layer','hotel-outline']);
+    toggleMulti('rs',['rs-layer','rs-outline']);
+    toggleMulti('sekolah',['sekolah-layer','sekolah-outline']);
+    toggleMulti('bangunan',['bangunan-layer','bangunan-outline']);
+
+});
+</script>
+
+</body>
+</html>
